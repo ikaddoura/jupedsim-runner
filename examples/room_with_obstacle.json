@@ -1,0 +1,46 @@
+{
+  "_description": "20 x 10 m room with a 2 x 4 m obstacle in the middle; 100 persons walk from the left to an exit on the right.",
+  "walkable_area_wkt": "POLYGON ((0 0, 20 0, 20 10, 0 10, 0 0), (9 3, 11 3, 11 7, 9 7, 9 3))",
+  "model_type": "CollisionFreeSpeedModel",
+  "seed": 42,
+  "config": {
+    "simulation_settings": {
+      "simulationParams": {
+        "max_simulation_time": 300,
+        "model_type": "CollisionFreeSpeedModel",
+        "strength_neighbor_repulsion": 2.6,
+        "range_neighbor_repulsion": 0.1
+      },
+      "numberOfSimulations": 1,
+      "baseSeed": 42
+    }
+  },
+  "exits": {
+    "jps-exits_0": {
+      "type": "polygon",
+      "coordinates": [[19, 4], [20, 4], [20, 6], [19, 6], [19, 4]],
+      "enable_throughput_throttling": false,
+      "max_throughput": 0
+    }
+  },
+  "distributions": {
+    "jps-distributions_0": {
+      "type": "polygon",
+      "coordinates": [[0.5, 0.5], [5, 0.5], [5, 9.5], [0.5, 9.5], [0.5, 0.5]],
+      "parameters": {
+        "number": 100,
+        "radius": 0.2,
+        "desired_speed": 1.34,
+        "use_flow_spawning": false,
+        "distribution_mode": "by_number",
+        "radius_distribution": "constant"
+      },
+      "journey_weights": [{"journey_id": "to_exit", "weight": 100}]
+    }
+  },
+  "checkpoints": {},
+  "zones": {},
+  "journeys_v2": [
+    {"id": "to_exit", "name": "To exit", "sequence": ["jps-exits_0"]}
+  ]
+}

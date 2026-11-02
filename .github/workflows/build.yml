@@ -1,0 +1,62 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-15,       name: macos-arm64 }
+          - { os: macos-15-intel, name: macos-x86_64 }
+          - { os: windows-2022,   name: windows-x86_64 }
+          - { os: ubuntu-22.04,   name: linux-x86_64 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build and smoke-test
+        run: PYTHON=python scripts/build.sh
+      # macOS builds come out ad-hoc signed only. They are signed and notarized locally by the
+      # maintainer (scripts/sign-and-notarize-macos.sh) and attached to the release by hand.
+      - name: Archive
+        run: |
+          cd dist
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            7z a "../jps-runner-${{ github.ref_name }}-${{ matrix.name }}.zip" jps-runner > /dev/null
+          else
+            tar czf "../jps-runner-${{ github.ref_name }}-${{ matrix.name }}.tar.gz" jps-runner
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jps-runner-${{ matrix.name }}
+          path: jps-runner-*
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      # Draft only, and without the macOS builds: those get added after notarization.
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            artifacts/jps-runner-windows-x86_64/*
+            artifacts/jps-runner-linux-x86_64/*
