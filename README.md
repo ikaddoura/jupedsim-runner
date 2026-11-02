@@ -25,8 +25,9 @@ jps-runner simulate scenario.json --out trajectory.sqlite [--seed 42] [--dt 0.01
 `simulate` prints one JSON line on stdout (logs go to stderr) with `status` (`completed` /
 `timeout`), `message`, `evacuation_time`, `total_agents`, `agents_evacuated`, `agents_remaining`,
 `frame_rate` and `sqlite_file`. Exit code 0: everyone left; 3: the maximum simulation time was
-reached with persons still inside — the trajectory is **kept**, so the jam can be inspected; 2: bad
-input or I/O error. (`jps-scenarios run` deletes the trajectory on a timeout; that is why `simulate`
+reached with persons still inside — the trajectory is **kept**, so the jam can be inspected; 2: the
+scenario could not be set up (bad input, more persons than a start area holds, I/O error) — one
+`error: …` line on stderr, no traceback. (`jps-scenarios run` deletes the trajectory on a timeout; that is why `simulate`
 exists.) All subcommands of `jps-scenarios` (`run`, `sweep`, `report`) work as well.
 
 The input is the scenario JSON of jupedsim-scenarios (the format the
@@ -45,6 +46,7 @@ The first run after unpacking takes up to a minute (matplotlib builds its font c
 
 | runner | jupedsim | jupedsim-scenarios |
 |---|---|---|
+| 0.1.1 | 1.4.2 | 0.9.0 |
 | 0.1.0 | 1.4.2 | 0.9.0 |
 
 `requirements.txt` pins the two, `constraints.txt` pins everything underneath. Bump them together

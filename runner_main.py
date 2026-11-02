@@ -13,7 +13,7 @@ _cache = pathlib.Path(os.environ.get("JPS_RUNNER_CACHE", pathlib.Path.home() / "
 os.environ["MPLCONFIGDIR"] = str(_cache / "matplotlib")
 os.environ.setdefault("MPLBACKEND", "Agg")
 
-RUNNER_VERSION = "0.1.0"
+RUNNER_VERSION = "0.1.1"
 
 
 def _version() -> int:
@@ -32,7 +32,7 @@ def _simulate(argv: list[str]) -> int:
 
     `jps-scenarios run` deletes the SQLite on a timeout; that is exactly the run a user wants to
     look at (where did it jam?). Exit codes: 0 all evacuated, 3 timed out (trajectory written),
-    2 bad input or I/O error.
+    2 the scenario could not be set up (bad input, too many persons for a start area, I/O error).
     """
     import argparse
 
@@ -56,7 +56,9 @@ def _simulate(argv: list[str]) -> int:
             every_nth_frame=args.every_nth_frame,
             output_path=args.out,
         )
-    except (ValueError, OSError) as exc:
+    except Exception as exc:  # noqa: BLE001
+        # jupedsim-scenarios raises a bare Exception for a start area that cannot hold its persons
+        # (and other setup failures). A traceback tells a user nothing; one line and exit 2 does.
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
