@@ -13,6 +13,13 @@ process, and read the trajectory SQLite it writes.
 
 ## Download
 
+### Installing
+
+- **macOS:** open the `.dmg` and drag the `jps-runner` folder into *Applications* (or anywhere), then
+  eject the image. Choose that folder in your application — not the `.dmg` itself, and not the opened
+  image under `/Volumes`, which disappears when it is ejected.
+- **Windows / Linux:** unpack the archive anywhere; it contains the `jps-runner` folder.
+
 Releases carry one archive per platform: `macos-arm64` (Apple silicon) and `macos-x86_64` (Intel)
 as signed, notarized `.dmg`, `windows-x86_64` (`.zip`), `linux-x86_64` (`.tar.gz`) — plus the
 source archives of the bundled LGPL components (JuPedSim, GEOS) with `SOURCES.sha256`. Unpack it anywhere and keep the

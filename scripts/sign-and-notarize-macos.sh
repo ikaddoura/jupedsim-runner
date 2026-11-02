@@ -29,8 +29,22 @@ find "$DIR" -type f -perm +111 ! -name '*.dylib' ! -name '*.so' -print0 |
   done
 codesign --verify --strict --verbose=2 "$DIR/jps-runner"
 
+# The image holds a jps-runner folder and a link to /Applications: the usual "drag it there"
+# window. Loose files at the top of the image get copied incompletely, or the image itself gets
+# chosen as the runner (seen with 0.1.1's first build).
+STAGE=$(mktemp -d)
+trap 'rm -rf "$STAGE"' EXIT
+ditto "$DIR" "$STAGE/jps-runner"
+ln -s /Applications "$STAGE/Applications"
+cat > "$STAGE/INSTALL.txt" <<TXT
+jps-runner $VERSION
+
+Drag the jps-runner folder into Applications (or anywhere you like) and eject this disk image.
+In MobilityStudio: Pedestrian Editor > Simulation > Choose... and select that jps-runner folder.
+Licenses: jps-runner/NOTICE.md, jps-runner/THIRD_PARTY_LICENSES.txt
+TXT
 rm -f "$DMG"
-hdiutil create -volname "jps-runner $VERSION" -srcfolder "$DIR" -ov -format UDZO "$DMG"
+hdiutil create -volname "jps-runner $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
 codesign --force --timestamp --sign "$DEVELOPER_ID" "$DMG"
 xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait
 xcrun stapler staple "$DMG"
