@@ -5,7 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 PYTHON="${PYTHON:-python3}"
 
-"$PYTHON" -m venv .build-venv
+# Fresh every time: a package left over from an earlier build would end up in the notices.
+"$PYTHON" -m venv --clear .build-venv
 VPY=.build-venv/bin/python
 [ -x "$VPY" ] || VPY=.build-venv/Scripts/python.exe
 "$VPY" -m pip install -q --upgrade pip
@@ -13,11 +14,9 @@ VPY=.build-venv/bin/python
 
 "$VPY" -m PyInstaller -y --log-level WARN --distpath dist --workpath build packaging/jps-runner.spec
 
-# Notices for everything inside the bundle (pip-licenses itself is not bundled).
-"$VPY" -m piplicenses --from=mixed --with-urls --with-license-file --no-license-path \
-  --format=plain-vertical --ignore-packages pyinstaller pyinstaller-hooks-contrib pip-licenses \
-  altgraph macholib pefile pywin32-ctypes setuptools pip prettytable wcwidth \
-  > dist/jps-runner/THIRD_PARTY_LICENSES.txt
+# Notices for everything inside the bundle: every license file of every bundled package
+# (GEOS inside shapely, HDF5 inside h5py, the native libraries of numpy and pillow, ...).
+"$VPY" -I scripts/collect_licenses.py dist/jps-runner
 cp LICENSE dist/jps-runner/LICENSE.txt
 cp NOTICE.md dist/jps-runner/NOTICE.md
 

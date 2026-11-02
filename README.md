@@ -4,6 +4,10 @@ A standalone command-line build of [JuPedSim](https://www.jupedsim.org) pedestri
 one folder per platform, no Python installation needed. It wraps the `jps-scenarios` CLI of
 [jupedsim-scenarios](https://github.com/PedestrianDynamics/jupedsim-scenarios) with PyInstaller.
 
+> This is an independent packaging of JuPedSim. It is **not affiliated with or endorsed by** the
+> JuPedSim project or Forschungszentrum Jülich. For JuPedSim itself — documentation, citation,
+> support — see [jupedsim.org](https://www.jupedsim.org).
+
 Applications use it at arm's length: they write a scenario JSON, start `jps-runner` as a separate
 process, and read the trajectory SQLite it writes.
 
@@ -58,8 +62,9 @@ and tag a new release; the scenario format is still alpha upstream.
 PYTHON=python3.12 scripts/build.sh
 ```
 
-Builds `dist/jps-runner/`, writes `THIRD_PARTY_LICENSES.txt` into it, and smoke-tests it on the
-example. CI (`.github/workflows/build.yml`) does the same on all four platforms; a `v*` tag creates a
+Builds `dist/jps-runner/`, writes `THIRD_PARTY_LICENSES.txt` and a `licenses/` folder into it
+(every license file of every bundled package, via `scripts/collect_licenses.py`), and smoke-tests it
+on the example. CI (`.github/workflows/build.yml`) does the same on all four platforms; a `v*` tag creates a
 draft release with the Windows and Linux archives.
 
 ### macOS release (maintainer, local)
@@ -79,4 +84,5 @@ Then attach `dist/jps-runner-0.1.0-macos-arm64.dmg` to the draft release and pub
 
 The runner's own code is MIT, see [LICENSE](LICENSE). The binaries bundle third-party software
 under its own licenses, among them JuPedSim (LGPL-3.0-or-later) and GEOS (LGPL-2.1), shipped as
-unmodified, replaceable files — see [NOTICE.md](NOTICE.md).
+unmodified, replaceable files — see [NOTICE.md](NOTICE.md). "JuPedSim" is the name of the
+Forschungszentrum Jülich project; it is used here only to say what this program runs.
