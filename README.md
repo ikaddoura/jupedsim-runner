@@ -38,9 +38,11 @@ jps-runner simulate scenario.json --out trajectory.sqlite [--seed 42] [--dt 0.01
 jps-runner analyse trajectory.sqlite measurements.json --out analysis.json
 ```
 
-`analyse` (since 0.2.0) evaluates a trajectory with [PedPy](https://github.com/PedestrianDynamics/PedPy):
-the cumulative number of persons over each measurement line, and the density (persons/m²) and mean
-speed (m/s) in each measurement area, per frame. Input
+`analyse` (since 0.2.0) evaluates a trajectory: the cumulative number of persons over each measurement line (each person
+counted once, at its first crossing in either direction; counted here rather than with PedPy's `compute_n_t`,
+which misses a person standing exactly on the line in one frame), and with
+[PedPy](https://github.com/PedestrianDynamics/PedPy) the density (persons/m²) and mean speed (m/s) in each
+measurement area, per frame. Input
 `{"lines": [{"id", "coordinates": [[x, y], [x, y]]}], "areas": [{"id", "coordinates": [[x, y], ...]}], "speed_window_s": 1.0}`;
 output `{"frame_rate", "lines": [{"id", "time", "cumulative"}], "areas": [{"id", "time", "density", "speed"}]}`
 (speed `null` where nobody with a known speed is inside). Persons are removed as soon as they enter

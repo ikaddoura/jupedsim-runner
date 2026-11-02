@@ -78,8 +78,40 @@ def _simulate(argv: list[str]) -> int:
     return 0 if result.success else 3
 
 
+def _first_crossings(data, coordinates):
+    """Frame at which each person first crosses the line segment, in either direction.
+
+    pedpy's compute_n_t misses a person whose position falls exactly on the line in one frame (seen
+    with grid-aligned starts: 149 of 150 counted). Here a point on the line counts as "not yet on the
+    positive side", so the side changes exactly once whichever way the person goes.
+    """
+    import numpy as np
+
+    (ax, ay), (bx, by) = coordinates[0], coordinates[-1]
+    dx, dy = bx - ax, by - ay
+    length2 = dx * dx + dy * dy
+    frames = []
+    for _, p in data.groupby("id", sort=False):
+        x = p["x"].to_numpy()
+        y = p["y"].to_numpy()
+        if len(x) < 2 or length2 == 0:
+            continue
+        s = dx * (y - ay) - dy * (x - ax)          # which side of the line (cross product)
+        side = s > 0
+        idx = np.nonzero(side[1:] != side[:-1])[0]
+        for i in idx:
+            denom = s[i] - s[i + 1]
+            f = s[i] / denom if denom != 0 else 0.0
+            px, py = x[i] + f * (x[i + 1] - x[i]), y[i] + f * (y[i + 1] - y[i])
+            u = ((px - ax) * dx + (py - ay) * dy) / length2
+            if -1e-9 <= u <= 1 + 1e-9:              # within the segment, not its extension
+                frames.append(int(p["frame"].iloc[i + 1]))
+                break
+    return frames
+
+
 def _analyse(argv: list[str]) -> int:
-    """Flow over measurement lines, density and speed in measurement areas, over time (PedPy).
+    """Flow over measurement lines (own crossing count), density and speed in measurement areas (PedPy), over time.
 
     Input: the trajectory SQLite of `simulate`, and a JSON
     {"lines": [{"id", "coordinates": [[x, y], [x, y]]}], "areas": [{"id", "coordinates": [[x, y], ...]}],
@@ -106,12 +138,17 @@ def _analyse(argv: list[str]) -> int:
         fps = float(traj.frame_rate)
         result = {"frame_rate": fps, "lines": [], "areas": []}
 
+        data_all = traj.data[["id", "frame", "x", "y"]].sort_values(["id", "frame"])
+        all_frames = np.arange(int(data_all["frame"].min()), int(data_all["frame"].max()) + 1)
         for line in spec.get("lines", []):
-            nt, _ = pedpy.compute_n_t(traj_data=traj, measurement_line=pedpy.MeasurementLine(line["coordinates"]))
+            crossing_frames = _first_crossings(data_all, line["coordinates"])
+            counts = np.zeros(len(all_frames), dtype=int)
+            for f in crossing_frames:
+                counts[int(f) - int(all_frames[0]):] += 1
             result["lines"].append({
                 "id": line["id"],
-                "time": [round(float(v), 3) for v in nt["time"]],
-                "cumulative": [int(v) for v in nt["cumulative_pedestrians"]],
+                "time": [round(f / fps, 3) for f in all_frames],
+                "cumulative": [int(v) for v in counts],
             })
 
         areas = spec.get("areas", [])
