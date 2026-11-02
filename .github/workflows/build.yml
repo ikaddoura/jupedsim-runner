@@ -52,9 +52,19 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+      # Source of the LGPL parts (JuPedSim, GEOS) in exactly the shipped versions, next to the
+      # binaries. shapely is installed only to learn which GEOS its wheels bundle.
+      - name: Fetch LGPL sources
+        run: |
+          pip install "shapely==$(grep -i '^shapely==' constraints.txt | cut -d= -f3)"
+          python scripts/fetch_sources.py sources
       # Draft only, and without the macOS builds: those get added after notarization.
       - uses: softprops/action-gh-release@v2
         with:
@@ -62,3 +72,4 @@ jobs:
           files: |
             artifacts/jps-runner-windows-x86_64/*
             artifacts/jps-runner-linux-x86_64/*
+            sources/*

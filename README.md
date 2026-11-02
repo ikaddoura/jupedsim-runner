@@ -13,8 +13,9 @@ process, and read the trajectory SQLite it writes.
 
 ## Download
 
-Releases carry one archive per platform: `macos-arm64` and `macos-x86_64` (signed, notarized
-`.dmg`), `windows-x86_64` (`.zip`), `linux-x86_64` (`.tar.gz`). Unpack it anywhere and keep the
+Releases carry one archive per platform: `macos-arm64` (Apple silicon) and `macos-x86_64` (Intel)
+as signed, notarized `.dmg`, `windows-x86_64` (`.zip`), `linux-x86_64` (`.tar.gz`) — plus the
+source archives of the bundled LGPL components (JuPedSim, GEOS) with `SOURCES.sha256`. Unpack it anywhere and keep the
 folder together — `jps-runner` loads its libraries from `_internal/` next to it.
 
 ## Usage
@@ -65,7 +66,8 @@ PYTHON=python3.12 scripts/build.sh
 Builds `dist/jps-runner/`, writes `THIRD_PARTY_LICENSES.txt` and a `licenses/` folder into it
 (every license file of every bundled package, via `scripts/collect_licenses.py`), and smoke-tests it
 on the example. CI (`.github/workflows/build.yml`) does the same on all four platforms; a `v*` tag creates a
-draft release with the Windows and Linux archives.
+draft release with the Windows and Linux archives and the LGPL source archives
+(`scripts/fetch_sources.py`).
 
 ### macOS release (maintainer, local)
 
@@ -79,6 +81,9 @@ DEVELOPER_ID="Developer ID Application: <Name> (<TEAMID>)" NOTARY_PROFILE=<profi
 ```
 
 Then attach `dist/jps-runner-0.1.0-macos-arm64.dmg` to the draft release and publish it.
+macOS builds of a tag are under the CI run's *Artifacts* (`jps-runner-macos-arm64`,
+`jps-runner-macos-x86_64`); unpack the `.tar.gz` inside into `dist/` and run
+`xattr -cr dist/jps-runner` (removes the browser's quarantine flag) before signing.
 
 ## License
 

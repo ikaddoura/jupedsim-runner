@@ -20,6 +20,10 @@ allows distributing the resulting program under any license.
 The versions above are those of release 0.1.1 (mac arm64 build); `THIRD_PARTY_LICENSES.txt` in each
 download lists the exact versions of that build.
 
+The source archives of the LGPL components in exactly these versions (`jupedsim-<version>.tar.gz`,
+`geos-<version>.tar.bz2`, with `SOURCES.sha256`) are attached to every release next to the
+binaries: https://github.com/ikaddoura/jupedsim-runner/releases
+
 The LGPL libraries are shipped unmodified as separate files in `_internal/`. You may replace them
 with your own builds of the same version; the runner loads whatever is in that folder. On macOS a
 replaced library must be re-signed (`codesign --force --sign - <file>`) and the folder's quarantine
