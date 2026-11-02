@@ -35,8 +35,8 @@ the geometry embedded as `walkable_area_wkt`; see `examples/room_with_obstacle.j
 JuPedSim's trajectory SQLite (`trajectory_data`, `metadata`, `geometry`, `frame_data`).
 
 **Element ids must carry the type prefix** the loader dispatches on: `jps-distributions_<n>`,
-`jps-exits_<n>`, `jps-checkpoints_<n>`, `jps-waypoints_<n>`, `jps-waiting_polygons_<n>`. With any
-other id the file loads fine, but nobody moves and the run ends in a timeout.
+`jps-exits_<n>`, `jps-checkpoints_<n>`, `jps-waypoints_<n>`, `jps-waiting_polygons_<n>`. A start
+area with any other id loads fine, but nobody moves and the run ends in a timeout.
 
 The first run after unpacking takes up to a minute (matplotlib builds its font cache once, in
 `~/.cache/jps-runner`, overridable with `JPS_RUNNER_CACHE`); later runs start in about a second.
