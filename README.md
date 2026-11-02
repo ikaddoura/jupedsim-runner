@@ -34,6 +34,18 @@ jps-runner simulate scenario.json --out trajectory.sqlite [--seed 42] [--dt 0.01
 
 `version` prints one JSON line with the runner, `jupedsim` and `jupedsim-scenarios` versions.
 
+```bash
+jps-runner analyse trajectory.sqlite measurements.json --out analysis.json
+```
+
+`analyse` (since 0.2.0) evaluates a trajectory with [PedPy](https://github.com/PedestrianDynamics/PedPy):
+the cumulative number of persons over each measurement line, and the density (persons/m²) and mean
+speed (m/s) in each measurement area, per frame. Input
+`{"lines": [{"id", "coordinates": [[x, y], [x, y]]}], "areas": [{"id", "coordinates": [[x, y], ...]}], "speed_window_s": 1.0}`;
+output `{"frame_rate", "lines": [{"id", "time", "cumulative"}], "areas": [{"id", "time", "density", "speed"}]}`
+(speed `null` where nobody with a known speed is inside). Persons are removed as soon as they enter
+an exit area, so a line placed on an exit counts nobody — put it in front.
+
 `simulate` prints one JSON line on stdout (logs go to stderr) with `status` (`completed` /
 `timeout`), `message`, `evacuation_time`, `total_agents`, `agents_evacuated`, `agents_remaining`,
 `frame_rate` and `sqlite_file`. Exit code 0: everyone left; 3: the maximum simulation time was
@@ -58,6 +70,7 @@ The first run after unpacking takes up to a minute (matplotlib builds its font c
 
 | runner | jupedsim | jupedsim-scenarios |
 |---|---|---|
+| 0.2.0 | 1.4.2 | 0.9.0 |
 | 0.1.1 | 1.4.2 | 0.9.0 |
 | 0.1.0 | 1.4.2 | 0.9.0 |
 
