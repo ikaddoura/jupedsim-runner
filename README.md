@@ -32,7 +32,9 @@ jps-runner version
 jps-runner simulate scenario.json --out trajectory.sqlite [--seed 42] [--dt 0.01] [--every-nth-frame 10]
 ```
 
-`version` prints one JSON line with the runner, `jupedsim` and `jupedsim-scenarios` versions.
+`version` prints one JSON line with the runner, `jupedsim` and `jupedsim-scenarios` versions, and (since
+0.3.0) `features`, what this runner can do beyond the scenario format: `analyse`, `exchange_v1`.
+Applications should check for a feature rather than a version number.
 
 ```bash
 jps-runner analyse trajectory.sqlite measurements.json --out analysis.json
@@ -68,10 +70,43 @@ area with any other id loads fine, but nobody moves and the run ends in a timeou
 The first run after unpacking takes up to a minute (matplotlib builds its font cache once, in
 `~/.cache/jps-runner`, overridable with `JPS_RUNNER_CACHE`); later runs start in about a second.
 
+### Passenger exchange: first alighting, then boarding (since 0.3.0)
+
+The scenario format has only a fixed waiting time per checkpoint, counted from each person's arrival.
+At a vehicle's doors the boarding persons should wait until the alighting persons are out — an event,
+not a time. A scenario with the optional top-level key `mobilitystudio_exchange` (ignored by the loader
+of jupedsim-scenarios) runs with a hook in the step loop (`exchange.py`) that does this:
+
+```json
+"mobilitystudio_exchange": {
+  "version": 1,
+  "release": "per_door",
+  "doors": [
+    {"id": "Door 1", "alighting_checkpoint": "jps-checkpoints_0",
+     "hold_checkpoints": ["jps-checkpoints_1", "jps-checkpoints_2"],
+     "alighting_distributions": ["jps-distributions_0"]}
+  ]
+}
+```
+
+- Boarding persons of a door are those with one of its `hold_checkpoints` on their route. These are
+  waiting checkpoints (waiting time above 0, otherwise the run is refused) beside the door; a person who
+  has arrived in one waits there until the door is released, then walks on at once.
+- Alighting persons of a door have its `alighting_checkpoint` (in front of the door, on the platform) on
+  their route but none of its hold checkpoints; they are out once they have passed it.
+- A door is released when all persons of its `alighting_distributions` have entered (or their flow's
+  time window is over) and none of them is still before the checkpoint. `per_door` releases each door on
+  its own, `whole_vehicle` all doors together once that holds for every door. Without alighting persons
+  a door is released at t = 0. A release is never taken back.
+
+The summary line then carries `"exchange": {"release", "doors": [{"id", "released_at"}]}`. An older
+runner ignores the key and lets everybody board at once, so applications must check for `exchange_v1`.
+
 ## Versions
 
 | runner | jupedsim | jupedsim-scenarios |
 |---|---|---|
+| 0.3.0 | 1.4.2 | 0.9.0 |
 | 0.2.0 | 1.4.2 | 0.9.0 |
 | 0.1.1 | 1.4.2 | 0.9.0 |
 | 0.1.0 | 1.4.2 | 0.9.0 |

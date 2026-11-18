@@ -13,7 +13,9 @@ _cache = pathlib.Path(os.environ.get("JPS_RUNNER_CACHE", pathlib.Path.home() / "
 os.environ["MPLCONFIGDIR"] = str(_cache / "matplotlib")
 os.environ.setdefault("MPLBACKEND", "Agg")
 
-RUNNER_VERSION = "0.2.0"
+RUNNER_VERSION = "0.3.0"
+# What this runner can do beyond the scenario format; applications check for these rather than a version.
+FEATURES = ["analyse", "exchange_v1"]
 
 
 def _version() -> int:
@@ -23,6 +25,7 @@ def _version() -> int:
         "runner": RUNNER_VERSION,
         "jupedsim": version("jupedsim"),
         "jupedsim_scenarios": version("jupedsim-scenarios"),
+        "features": FEATURES,
     }))
     return 0
 
@@ -33,6 +36,9 @@ def _simulate(argv: list[str]) -> int:
     `jps-scenarios run` deletes the SQLite on a timeout; that is exactly the run a user wants to
     look at (where did it jam?). Exit codes: 0 all evacuated, 3 timed out (trajectory written),
     2 the scenario could not be set up (bad input, too many persons for a start area, I/O error).
+
+    A scenario with the key ``mobilitystudio_exchange`` (since 0.3.0) runs with the passenger-exchange
+    hook of ``exchange.py``: boarding persons wait beside a door until its alighting persons are out.
     """
     import argparse
 
@@ -46,23 +52,36 @@ def _simulate(argv: list[str]) -> int:
     parser.add_argument("--every-nth-frame", type=int, default=10)
     args = parser.parse_args(argv)
 
+    import exchange as passenger_exchange
+
     scenario_path = pathlib.Path(args.scenario).resolve()
+    exchange = None
     try:
         scenario = load_scenario(str(scenario_path))
-        result = run_scenario(
-            scenario,
-            seed=args.seed,
-            dt=args.dt,
-            every_nth_frame=args.every_nth_frame,
-            output_path=args.out,
-        )
+        spec = scenario.raw.get(passenger_exchange.KEY)
+        if spec is None:
+            result = run_scenario(
+                scenario,
+                seed=args.seed,
+                dt=args.dt,
+                every_nth_frame=args.every_nth_frame,
+                output_path=args.out,
+            )
+        else:
+            result, exchange = passenger_exchange.run(
+                scenario, spec,
+                seed=args.seed,
+                dt=args.dt,
+                every_nth_frame=args.every_nth_frame,
+                output_path=args.out,
+            )
     except Exception as exc:  # noqa: BLE001
         # jupedsim-scenarios raises a bare Exception for a start area that cannot hold its persons
         # (and other setup failures). A traceback tells a user nothing; one line and exit 2 does.
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    print(json.dumps({
+    summary = {
         "scenario": str(scenario_path),
         "seed": result.seed,
         "model_type": scenario.model_type,
@@ -74,7 +93,10 @@ def _simulate(argv: list[str]) -> int:
         "agents_remaining": result.agents_remaining,
         "frame_rate": result.metrics.get("frame_rate"),
         "sqlite_file": str(pathlib.Path(args.out).resolve()),
-    }))
+    }
+    if exchange is not None:
+        summary["exchange"] = exchange.summary()
+    print(json.dumps(summary))
     return 0 if result.success else 3
 
 
